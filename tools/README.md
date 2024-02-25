@@ -1,6 +1,6 @@
 # Tools
 
-This directory holds notes on tools and useful copy-pastable commands with all the right flags
+This directory holds notes on various software
 
 - [Kali / Linux](./kali/README.md)
 - [Windows](./windows/README.md)

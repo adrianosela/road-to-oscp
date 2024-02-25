@@ -5,3 +5,4 @@ A collection of notes, scripts, utilities, cheatsheets I use to prepare for the 
 ### Contents
 
 - [Tools](./tools/README.md)
+- [Cheatsheets](./cheatsheets/README.md)
