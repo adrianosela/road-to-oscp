@@ -1,6 +1,7 @@
 # Tools
 
-This directory holds notes on various software
+This directory holds notes on useful software tools
 
-- [Kali / Linux](./kali/README.md)
-- [Windows](./windows/README.md)
+- [Kali](./kali/README.md)
+- [Linux Targets](./linux-targets/README.md)
+- [Windows Targets](./windows-targets/README.md)

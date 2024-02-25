@@ -110,6 +110,8 @@ Only at 16% done but we already have a promising path found.
 
 8) Navigating in firefox to `http://target:8000/admin` redirected us to a Django admin interface at `http://target:8000/admin/login/?next=/admin/`
 
+![](./assets/admin.png)
+
 9) Trying possible default creds user=admin, password=admin... lets us in! (For later: we could try fuzzing the login form, we just got lucky here).
 
 10) Noting that we may be able to run arbitrary code on the server here (looks like we can manage scheduled tasks).
@@ -119,6 +121,8 @@ Only at 16% done but we already have a promising path found.
 12) Tried to define a job to set up a reverse shell but didn't succeed -- doesn't seem to be a way to write code on the UI for the jobs directly. Moving back to the RCE vector we found with searchsploit earlier (in 6).
 
 13) Looks like outside of the admin console (just in http://target:8000/) we can also use admin credentials (admin:admin) to get access to the admin user account in Gerapy. Here we can define projects where it seems we can write arbitrary code... this is promising. We should be able to write code that sets up a reverse shell and calls out to our Kali machine.
+
+![](./assets/project-config.png)
 
 14) Inspecting the exploit file `/usr/share/exploitdb/exploits/python/remote/50640.py` we see that it actually logs in on our behalf and defines the project, so we don't need to do it ourselves. Looking at the code we see it also sets up the local listener to catch the reverse shell -- so we don't need to catch it ourselves (e.g. with `nc` or other client).
 
@@ -228,8 +232,11 @@ cat local.txt
 16) Now we need to get root... Looking at `/etc/passwd` there are only two users with shells:
 
 ```
-app@ubuntu:~$ cat /etc/passwd | grep bash
-cat /etc/passwd | grep bash
+app@ubuntu:~$ cat /etc/passwd
+cat /etc/passwd
+
+(... full list omitted)
+
 root:x:0:0:root:/root:/bin/bash
 app:x:1000:1000:,,,:/home/app:/bin/bash
 

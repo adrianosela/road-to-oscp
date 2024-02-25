@@ -9,7 +9,7 @@
 - [hydra](#hydra): Brute force / password spraying tool
 - [hashcat](#hashcat): Cracks hashes with dictionary attack
 - [ssh2john](#ssh2john): Extract password-hash from password-protected RSA private keys
-- [john (John the Ripper)](#john): Password "recovery" (cracking) tool with various input formats
+- [john (John the Ripper)](#john-john-the-ripper): Password "recovery" (cracking) tool with various input formats
 
 
 ## openvpn
