@@ -5,7 +5,6 @@
 - [Discovery](#discovery)
 - [Access](#access)
 - [Root Access](#root-access)
-- [Bonus (Persistence via New OS User)](#bonus)
 
 ## Set-up
 
