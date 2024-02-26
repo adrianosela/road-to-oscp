@@ -5,7 +5,7 @@
 - [Discovery](#discovery)
 - [Access Flag](#access-flag)
 - [Root Flag](#root-flag)
-- [Bonus (Persistence via SSH Backdoor)](#bonus)
+- [Bonus (Persistence via New OS User)](#bonus)
 
 ## Set-up
 
