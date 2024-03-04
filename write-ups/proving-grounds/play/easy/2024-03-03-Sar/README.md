@@ -23,6 +23,11 @@ PORT   STATE SERVICE
 2) We run `nmap` again with service version detection and default scripts
 
 ```
+┌──(kali㉿kali)-[~]
+└─$ nmap -v -p 22,80 -T4 -A sar
+
+...
+
 PORT   STATE SERVICE VERSION
 22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
 | ssh-hostkey: 

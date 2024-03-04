@@ -1,0 +1,7 @@
+- running as high priv
+
+root         872  0.0  0.0   2888   956 ?        Ss   06:31   0:00      _ /bin/sh -c cd /home/andrew/app && su -c "ruby app.rb" andrew
+
+
+User andrew may run the following commands on rubydome:
+    (ALL) NOPASSWD: /usr/bin/ruby /home/andrew/app/app.rb
