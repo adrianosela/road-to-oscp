@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
 After reading the code I realize the LinPEAS result show an active listener on this app's port 65432...
 
-Maybe `rpcpy` is vulnerable to something?
+Maybe `rpc.py` is vulnerable to something?
 
 ```
 ┌──(kali㉿kali)-[~]
