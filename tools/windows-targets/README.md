@@ -40,3 +40,14 @@ Some commands:
 - `log` will start a log file in the current working directory
 - `lsadump::lsa /inject` dumps usernames and password *hashes* with the 'inject' method
 - `sekurlsa::logonpasswords` same as above but more thorough / more info
+
+
+## findstr
+
+Basically `grep` for Windows...
+
+Usage:
+
+```
+> dir | findstr 'txt'
+```
