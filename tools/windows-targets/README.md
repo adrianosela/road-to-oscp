@@ -11,7 +11,7 @@ An http / file-download client built into windows ([docs](https://learn.microsof
 Usage:
 
 ```
-certutil.exe -f ${URL} ${OUTPUT_FILENAME}
+certutil.exe -urlcache -f ${URL} ${OUTPUT_FILENAME}
 ```
 
 ## WinPEAS
