@@ -1,4 +1,4 @@
-# CTF-200-02 (rough notes)
+# MZEEAV f.k.a. CTF-200-02 (rough notes)
 
 Initial port scan:
 

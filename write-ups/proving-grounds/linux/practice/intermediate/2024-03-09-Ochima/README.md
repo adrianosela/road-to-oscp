@@ -1,4 +1,4 @@
-# CTF-200-01 (rough notes)
+# Ochima f.ka. CTF-200-01 (rough notes)
 
 Initial port scan:
 

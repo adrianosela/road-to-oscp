@@ -1,4 +1,4 @@
-# CTF-200-08 (rough notes)
+# Flu f.k.a. CTF-200-08 (rough notes)
 
 Initial port scan:
 

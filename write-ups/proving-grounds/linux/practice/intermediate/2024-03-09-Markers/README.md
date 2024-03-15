@@ -1,4 +1,4 @@
-# CTF-200-03 (rough notes)
+# Markers f.k.a. CTF-200-03 (rough notes)
 
 > This one was rated "very hard" by the community... so we'll see how it goes...
 
