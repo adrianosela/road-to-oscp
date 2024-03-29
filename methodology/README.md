@@ -52,6 +52,14 @@ Some useful options:
 - `-f` will append a trailing slash to all words (`/`)
 - `-x '.php,.txt'` will append strings to all words
 
+## Webserver Enumeration (WordPress)
+
+1) Run `wpscan` to determine what plugins/themes/etc are present:
+
+```
+wpscan --url ${TARGET}/${WORDPRESS_PATH} --enumerate p
+```
+
 ## Webserver Form Tampering
 
 7) **ALWAYS** try a handful of well-known bad username+password combinations e.g. `admin:admin`, `admin:password`, ...
